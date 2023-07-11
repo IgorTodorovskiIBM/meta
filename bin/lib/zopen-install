@@ -68,7 +68,7 @@ getContentsFromGithub()
 
 printListEntries()
 {
-  printf "${NC}${UNDERLINE}${1}%-20s %-20s %-20s %-30s %-10s %-25s\n${NC}" "Repo" "Your version" "Latest Tag" "Dependencies" "Status" "Quality"
+  printf "${NC}${UNDERLINE}${1}%-20s %-35s %-35s %-25s %-10s %-25s\n${NC}" "Repo" "Your version" "Latest Tag" "Dependencies" "Status" "Quality"
   echo "$repoArray" | xargs | tr ' ' '\n' | sort | while read repo; do
     name=${repo%port}
     if ! contents="$(getContentsFromGithub "https://api.github.com/repos/ZOSOpenTools/${repo}/releases/latest")"; then
@@ -100,7 +100,7 @@ printListEntries()
     else
       originalTag="Not installed"
     fi
-    printf '%-20s %-20s %-20s %-30s %-10s %-25s\n' "$repo" "$originalTag" "$latestTag" "$dependencies" "$buildQuality" "$testStatus"
+    printf '%-20s %-35s %-35s %-25s %-10s %-25s\n' "$repo" "$originalTag" "$latestTag" "$dependencies" "$buildQuality" "$testStatus"
     continue;
   done
 }
@@ -115,14 +115,18 @@ installDependencies()
   if [ "$dependencies" != "No dependencies" ]; then
     printHeader "Checking dependencies for $name: $dependencies..."
     
-    # Remove an old one if it exists
-    rm -f "${name}/.depsenv"
-    varName=$(echo "$name" | sed -e "s/-/_/g")
-    cat <<ZZ >> "${name}/.depsenv"
+    # Update .depsenv 
+    if [ -d "${name}" ]; then
+      # Remove an old one if it exists
+      rm -f "${name}/.depsenv"
+      varName=$(echo "$name" | sed -e "s/-/_/g")
+      cat <<ZZ >> "${name}/.depsenv"
 ${varName}_originalDir="\$OLDPWD"
 ZZ
+    fi
     echo "$dependencies" | xargs | tr ' ' '\n' | sort | while read dep; do
-      cat <<ZZ >> "${name}/.depsenv"
+      if [ -d "${name}" ]; then
+       cat <<ZZ >> "${name}/.depsenv"
 if [ -f "../${dep}/.env" ]; then
   if [[ \$(type echo) == 'echo is a shell builtin' ]]; then
     pushd "../${dep}" >/dev/null
@@ -133,12 +137,15 @@ if [ -f "../${dep}/.env" ]; then
   fi
 fi
 ZZ
+      fi
       installPort $dep
-    done
+   done
 
-    cat <<ZZ >> "${name}/.depsenv"
+    if [ -d "${name}" ]; then
+      cat <<ZZ >> "${name}/.depsenv"
 OLDPWD="\$${varName}_originalDir"
 ZZ
+    fi
   fi
 )
 
@@ -265,16 +272,6 @@ installPort()
     (cd "${name}" && . ./.env)
   fi
 
-  # Append deps env include
-    cat <<ZZ >> "${name}/.env"
-if [ -f ".depsenv" ] && [ -z "\$ZOPEN_SOURCING_DEPS" ] ; then
-  ZOPEN_SOURCING_DEPS=1
-  . ./.depsenv
-fi
-  if [ ! -z "\$ZOPEN_SOURCING_DEPS" ]; then
-    unset ZOPEN_SOURCING_DEPS
-  fi
-ZZ
   versionPath="$name/.version"
   if [ -r "$versionPath" ]; then
     version=$(cat "$versionPath");
