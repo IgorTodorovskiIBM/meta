@@ -22,7 +22,7 @@ printSyntax()
   echo "  --re-init - re-initialize a previous installation (if present).  Re-initializing over a previous installation will re-use existing package structures and configurations." >&2
   echo "  --clone - clones the current installation to a different location" >&2
   echo "  -v: run in verbose mode" >&2
-  echo "  -?: display help" >&2
+  echo "  -?|-h|--help: display help" >&2
 }
 
 args=$*
@@ -74,7 +74,7 @@ if $clone; then
 elif [ -e "$configFile" ]; then
   if ! $reinitExisting; then
     printWarning "- Existing configuration file found; re-initializing might lose access to previously installed packages. Continue (y/n)?"
-    read reinit < /dev/tty
+    reinit=$(getInput)
   fi
   if $reinitExisting || { [ -n "$reinit" ] && [ "y" = "${reinit}" ]; }; then
     printInfo "- Re-initializing; removing existing .zopen-config"
@@ -96,7 +96,7 @@ if [ -z "$rootfs" ]; then
   else
     printInfo "- Enter fully-qualified path to your zopen root directory (default: $HOME/zopen)"
   fi
-  read rootfs < /dev/tty
+  rootfs=$(getInput)
 else
   printInfo "- Setting root directory from cli: $rootfs"
 fi
@@ -114,37 +114,14 @@ else
   fi
   if [ "$rootfs" = "/" ]; then
     printInfo "- Installing into system root; are you sure (y/N)?"
-    read sysrootok < /dev/tty
+    sysrootok=$(getInput)
     if [ -n "$sysrootok" ] && [ "y" = "${sysrootok}" ]; then
-      printInfo "- Using '/'as root filesystem"
+      printInfo "- Using '/' as root filesystem"
       rootfs="/." # references below take a root directory
     else
+      printWarning "- Stopping. Existing configuration will be preserved"
       exit 4
     fi
-  fi
-fi
-
-if [ -n "$ZOPEN_GIT_OAUTH_TOKEN" ]; then
-  printInfo "- Found existing envvar: ZOPEN_GIT_OAUTH_TOKEN; reuse value (y/n)?"
-  read foundGitOauth < /dev/tty
-  if [ -n "$foundGitOauth" ] && [ "y" = "${foundGitOauth}" ]; then
-    zopen_oauth="export ZOPEN_GIT_OAUTH_TOKEN=$ZOPEN_GIT_OAUTH_TOKEN"
-  else
-    unset ZOPEN_GIT_OAUTH_TOKEN
-  fi
-fi
-
-if [ -z "$ZOPEN_GIT_OAUTH_TOKEN" ]; then
-  printInfo "- Enter the github oauth token for use in zopen-download. If none (not recommended), press enter"
-  addCleanupTrapCmd "stty echo"
-  stty -echo
-  read zopen_oauth < /dev/tty
-  stty echo
-  if [ -n "$zopen_oauth" ]; then
-    zopen_oauth="export ZOPEN_GIT_OAUTH_TOKEN=$zopen_oauth"
-  else
-    # Placeholder in the .zopen-config
-    zopen_oauth="export ZOPEN_GIT_OAUTH_TOKEN="
   fi
 fi
 
@@ -153,6 +130,7 @@ if ! $clone; then
   [ -e "$rootfs" ] || mkdir -p "$rootfs" || printError "Unable to create zopen root filesystem at '$rootfs'"
   [ -d "$rootfs" ] || printError "Specified location '$rootfs' is not a directoryUnable to access root file system at '$rootfs'; check permissions"  
   [ -w "$rootfs" ] || printError "Unable to access root file system at '$rootfs'; check permissions"  
+
   printInfo "- Populating standard file system"
   [ -e "$rootfs/bin" ] || mkdir -p "$rootfs/bin"
   [ -e "$rootfs/etc" ] || mkdir -p "$rootfs/etc"
@@ -206,7 +184,7 @@ fi
 
 if [ "$ZOPEN_PKGINSTALL" = "$rootfs" ]; then
    printWarning "Package install location is the zopen root location; this is not recommended. Continue (y/n)"
-   read pkgoverlaysrootfs < /dev/tty
+   pkgoverlaysrootfs=$(getInput)
    if [ -n "$pkgoverlaysrootfs" ] && [ "y" = "${pkgoverlaysrootfs}" ]; then
      printInfo "- Continuing. Packages will be installed into the zopen root location: $rootfs"
    else
@@ -242,6 +220,7 @@ atExit() {
 }
 
 trap "atExit" EXIT INT TERM QUIT HUP
+
 sanitizeEnvVar(){
   #remove any envvar entries that match the specified regex
   value=\$1
@@ -298,30 +277,22 @@ MANPATH="\$MANPATH:"
 export MANPATH
 export LIBPATH
 export PATH
+
+# Unset traps
+trap - EXIT INT TERM QUIT HUP
 EOF
 
-# The skeleton configuration file should NOT hold the installer's GIT oauth
-# token but should supply their own; only write any oauth token to the real not
-# skeleton file
 skeletonDir="$rootfs/etc/skel"
 skelcfg="$skeletonDir/.zopen-config"
 printVerbose "Copying configuration file to $skeletonDir for backup/distribution"
 cp "$configFile" "$skelcfg"
 printVerbose "Adding git oauth token placeholder and footer to skeleton file"
 cat << EOF >>  "$skelcfg"
-# It is strongly advised to setup and use a Github Access Token
-export ZOPEN_GIT_OAUTH_TOKEN=
 /bin/echo "- \$zot configuration completed in \$(( \$SECONDS - \$configStartTime )) seconds."
 EOF
 perms="744"
 printVerbose "Giving world read access to skel config file"
 chmod "$perms" "$skelcfg"
-
-printVerbose "Adding 'real' git oauth token (or placeholder) and footer to user config file"
-cat << EOF >>  "$configFile"
-$zopen_oauth
-/bin/echo "- \$zot configuration completed in \$(( \$SECONDS - \$configStartTime )) seconds."
-EOF
 
 perms="400"
 printVerbose "Setting user configuration file [$configFile] as read-only for user, no access to others [$perms]"
@@ -349,9 +320,10 @@ else
   echo "15" > "$rootfs/etc/zopen/rm_fileprocs"
 
   printInfo "- Check for shipped curl pax"
-  curlpax="curl-8.1.2.20230707_145137.zos.pax.Z"
+  curlpax="packages/curl-8.1.2.20230707_145137.zos.pax.Z"
 
   curllcn=$(findrev "${utildir}" "$curlpax")
+  echo "$curllcn/$curlpax"
   if [ -e "$curllcn/$curlpax" ]; then
     printInfo "- Found $curlpax. Adding to zopen cache to install as bootstrap"
     cp "$curllcn/$curlpax" "$rootfs/var/cache/zopen"
@@ -360,25 +332,25 @@ else
   fi
   printVerbose "- Expanding curl to bootstrap dir..."
   cachedir="$rootfs/var/cache/zopen"
-  [ -e "$cachedir/$curlpax" ] || printError "Could not locate bootstrap curl pax."
-  paxrc=$(pax -rf "$cachedir/$curlpax" -s##$rootfs/boot/#)
+  basecurlpax=$(basename $curlpax)
+  [ -e "$cachedir/$basecurlpax" ] || printError "Could not locate bootstrap curl pax."
+  paxrc=$(pax -rf "$cachedir/$basecurlpax" -s##$rootfs/boot/#)
 
   printInfo "- Check for shipped jq pax"
-  jqpax="jq-1.6.20230705_132543.zos.pax.Z"
+  jqpax="packages/jq-1.6.20230720_160648.zos.pax.Z"
 
   jqlcn=$(findrev "${utildir}" "$jqpax")
-  echo "HERE: $jqlcn/$jqpax"
   if [ -e "$jqlcn/$jqpax" ]; then
     printInfo "- Found $jqpax. Adding to zopen cache to install as bootstrap"
     cp "$jqlcn/$jqpax" "$rootfs/var/cache/zopen"
   else
-    printError "jqpax not found"
+    printError "$jqpax not found"
   fi
   printVerbose "- Expanding jq to bootstrap dir..."
   cachedir="$rootfs/var/cache/zopen"
-  [ -e "$cachedir/$jqpax" ] || printError "Could not locate bootstrap jq pax."
-  paxrc=$(pax -rf "$cachedir/$jqpax" -s##$rootfs/boot/#)
-  echo $rootfs/boot/
+  basejqpax=$(basename $jqpax)
+  [ -e "$cachedir/$basejqpax" ] || printError "Could not locate bootstrap jq pax."
+  paxrc=$(pax -rf "$cachedir/$basejqpax" -s##$rootfs/boot/#)
 
   cacertlcn=$(findrev "${utildir}" "cacert.pem")
   if [ -e "$cacertlcn/cacert.pem" ]; then
@@ -397,7 +369,7 @@ else
   
   # Need to source the .env file from within the actual curl directory and cannot
   # spawn sub-process otherwise no access to environment from this script so run inline
-  curldir="$(ls $rootfs/boot |grep curl)"
+  curldir="$(ls $rootfs/boot | grep curl)"
   [ -e "$rootfs/boot/$curldir" ] || printError "Could not locate curl for bootstrap. Re-run 'zopen init' to retry"
   chmod -R 755 "$rootfs/boot/$curldir"
   curwd=$PWD
@@ -405,7 +377,7 @@ else
   . ./.env
   cd "$curwd"  || printError "Could not change to $curwd. Re-run 'zopen init' to retry"
 
-  jqdir="$(ls $rootfs/boot |grep jq)"
+  jqdir="$(ls $rootfs/boot | grep jq)"
   [ -e "$rootfs/boot/$jqdir" ] || printError "Could not locate jq for bootstrap. Re-run 'zopen init' to retry"
   chmod -R 755 "$rootfs/boot/$jqdir"
   curwd=$PWD
@@ -470,7 +442,7 @@ else
   printInfo "- zopen bootstrapping complete"
 
   printInfo "- Configure .profile to automatically source zopen environment (y/n)?"
-  read profileEnable < /dev/tty
+  profileEnable=$(getInput)
   if [ -n "$profileEnable" ] && [ "y" = "${profileEnable}" ]; then
     if ! grep -q ". \$HOME/.zopen-config" "$HOME/.profile"; then
       printVerbose "Line not present (grep returned non-0)"
