@@ -428,6 +428,7 @@ printVerbose()
     printColors "${NC}${GREEN}${BOLD}VERBOSE${NC}: '${1}'" >&2
   fi
   [ ! -z "$xtrc" ] && set -x
+  return 0;
 }
 
 printHeader()
@@ -435,6 +436,7 @@ printHeader()
   [ -z "${-%%*x*}" ] && set +x && xtrc="-x" || xtrc=""
   printColors "${NC}${YELLOW}${BOLD}${UNDERLINE}${1}${NC}" >&2
   [ ! -z "$xtrc" ] && set -x
+  return 0;
 }
 
 runAndLog()
