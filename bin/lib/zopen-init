@@ -19,8 +19,9 @@ printSyntax()
   echo "      ibm  - /usr/lpp;" >&2
   echo "      fhs  - File Hierarchical Standard (/opt)"  >&2
   echo "      usrlcl - /usr/local;">&2
-  echo "  --re-init - re-initialize a previous installation (if present).  Re-initializing over a previous installation will re-use existing package structures and configurations." >&2
-  echo "  --clone - clones the current installation to a different location" >&2
+  echo "  --re-init: re-initialize a previous installation (if present).  Re-initializing over a previous installation will re-use existing package structures and configurations." >&2
+  echo "  --clone: clones the current installation to a different location" >&2
+  echo "  --append-to-profile: appends sourcing of .zopen-config to .profile" >&2
   echo "  -v: run in verbose mode" >&2
   echo "  -?|-h|--help: display help" >&2
 }
@@ -30,6 +31,7 @@ args=$*
 verbose=false
 reinitExisting=false
 clone=false
+appendToProfile=false
 fslayout="usrlclz"
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -42,6 +44,9 @@ while [ $# -gt 0 ]; do
       ;;
     "--clone" )
       clone=true
+      ;;
+    "--append-to-profile" )
+      appendToProfile=true
       ;;
     "-h" | "--h" | "-help" | "--help" | "-?" | "-syntax")
       printSyntax "${args}"
@@ -249,6 +254,7 @@ LIBPATH=\$(deleteDuplicateEntries \"\$LIBPATH\" \":\")
 MANPATH=\$ZOPEN_ROOTFS/usr/share/man:\$ZOPEN_ROOTFS/usr/share/man/\%L:\$(sanitizeEnvVar \"\$MANPATH\" \":\" \"^\$ZOPEN_PKGINSTALL/.*\$\")
 MANPATH=\$(deleteDuplicateEntries \"\$MANPATH\" \":\")
 
+if [ -z "\$ZOPEN_QUICK_LOAD" ]; then
 if [ -e "\$ZOPEN_ROOTFS/etc/profiled" ]; then
   dotenvs=\$(find "\$ZOPEN_ROOTFS/etc/profiled" -type f -name 'dotenv' -print)
   dotenvcnt=\$(echo "\$dotenvs" | wc -l | tr -d ' ')
@@ -272,6 +278,7 @@ if [ -e "\$ZOPEN_ROOTFS/etc/profiled" ]; then
   [ ! -p \$TMP_FIFO_PIPE ] || rm -f \$TMP_FIFO_PIPE
   /bin/echo "\047[1A\047[\$30D\047[2K- Processed \$zot configuration: 100% (\${dotenvcnt}/\${dotenvcnt})"
   unset dotenvs dotenvcnt flecnt
+fi
 fi
 MANPATH="\$MANPATH:"
 export MANPATH
@@ -308,7 +315,7 @@ printInfo "- Root FS available at $rootfs"
 
 if $clone; then
   printInfo "- Cloning from $ZOPEN_ROOTFS to $rootfs"
-  cp -RT "$ZOPEN_ROOTFS" "$rootfs"
+  cp -fRT "$ZOPEN_ROOTFS" "$rootfs"
   printInfo "${NC}${CYAN}- Run '. $configFile' to enable cloned environment for current session${NC}"
   printInfo "${NC}${CYAN}- or manually copy cloned configuration to required location and/or modify .profile"
   syslog "$ZOPEN_LOG_PATH/audit.log" "$LOG_A" "$CAT_PACKAGE,$CAT_FILE" "INIT" "" "zopen environment cloned to $rootfs"
@@ -326,7 +333,7 @@ else
   echo "$curllcn/$curlpax"
   if [ -e "$curllcn/$curlpax" ]; then
     printInfo "- Found $curlpax. Adding to zopen cache to install as bootstrap"
-    cp "$curllcn/$curlpax" "$rootfs/var/cache/zopen"
+    cp -f "$curllcn/$curlpax" "$rootfs/var/cache/zopen"
   else
     printError "Could not locate curl pax in the zopen cache"
   fi
@@ -342,7 +349,7 @@ else
   jqlcn=$(findrev "${utildir}" "$jqpax")
   if [ -e "$jqlcn/$jqpax" ]; then
     printInfo "- Found $jqpax. Adding to zopen cache to install as bootstrap"
-    cp "$jqlcn/$jqpax" "$rootfs/var/cache/zopen"
+    cp -f "$jqlcn/$jqpax" "$rootfs/var/cache/zopen"
   else
     printError "$jqpax not found"
   fi
@@ -355,7 +362,7 @@ else
   cacertlcn=$(findrev "${utildir}" "cacert.pem")
   if [ -e "$cacertlcn/cacert.pem" ]; then
     printInfo "- Found default cacert.pem; copying to zopen file system"
-    cp "$cacertlcn/cacert.pem" "$ZOPEN_ROOTFS/$ZOPEN_CA_DIR"
+    cp -f "$cacertlcn/cacert.pem" "$ZOPEN_ROOTFS/$ZOPEN_CA_DIR"
   else
     printError "Could not locate default cacert.pem at '../cacert.pem'."
   fi
@@ -421,12 +428,12 @@ else
       printInfo "- Re-initialising target is current; no action required"
     else
       printInfo "- Copying existing meta to re-initialised location"
-      cp -RT "$deref/"  "$metadtInstDir"
+      cp -fRT "$deref/"  "$metadtInstDir"
     fi
     
   else
     printVerbose "Copying local meta; work out where to find all files"
-    cp -RT "${utildir}/../../"  "$metadtInstDir" 
+    cp -fRT "${utildir}/../../"  "$metadtInstDir" 
   fi
 
   printInfo "- Running alternative utility to force selection of forked meta"
@@ -441,9 +448,7 @@ else
 
   printInfo "- zopen bootstrapping complete"
 
-  printInfo "- Configure .profile to automatically source zopen environment (y/n)?"
-  profileEnable=$(getInput)
-  if [ -n "$profileEnable" ] && [ "y" = "${profileEnable}" ]; then
+  if $appendToProfile; then
     if ! grep -q ". \$HOME/.zopen-config" "$HOME/.profile"; then
       printVerbose "Line not present (grep returned non-0)"
   cat << EOF >>  "$HOME/.profile"
