@@ -614,14 +614,14 @@ printElapsedTime()
 
   elapsedTimeOutput="$functionName completed in $elapsedTime seconds."
 
-#  case $printType in
-#    "info")
-#      printInfo "$elapsedTimeOutput"
-#      ;;
-#    "verbose")
-#      printVerbose "$elapsedTimeOutput"
-#      ;;
-#  esac
+  case $printType in
+    "info")
+      printInfo "$elapsedTimeOutput"
+      ;;
+    "verbose")
+      printVerbose "$elapsedTimeOutput"
+      ;;
+  esac
 }
 
 processConfig()
