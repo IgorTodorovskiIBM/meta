@@ -283,9 +283,7 @@ fi
 cd \$curdir  >/dev/null 2>&1
 EOF
         printInfo "- Sourcing environment to run any setup"
-set -x
         cd "$baseinstalldir/$name" && "./setup.sh"
-set +x
       fi
     fi
     if $unInstallOldVersion; then
