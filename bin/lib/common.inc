@@ -430,6 +430,7 @@ printVerbose()
     printColors "${NC}${GREEN}${BOLD}VERBOSE${NC}: '${1}'" >&2
   fi
   [ ! -z "$xtrc" ] && set -x
+  return 0;
 }
 
 printHeader()
@@ -437,6 +438,7 @@ printHeader()
   [ -z "${-%%*x*}" ] && set +x && xtrc="-x" || xtrc=""
   printColors "${NC}${YELLOW}${BOLD}${UNDERLINE}${1}${NC}" >&2
   [ ! -z "$xtrc" ] && set -x
+  return 0;
 }
 
 runAndLog()
@@ -578,6 +580,7 @@ printWarning()
   [ -z "${-%%*x*}" ] && set +x && xtrc="-x" || xtrc=""
   printColors "${NC}${YELLOW}${BOLD}***WARNING: ${NC}${YELLOW}${1}${NC}" >&2
   [ -n "$xtrc" ] && set -x
+  return 0;
 }
 
 printInfo()
@@ -585,6 +588,7 @@ printInfo()
   [ -z "${-%%*x*}" ] && set +x && xtrc="-x" || xtrc=""
   printColors "$1" >&2
   [ -n "$xtrc" ] && set -x
+  return 0;
 }
 
 # Used to input sensitive data - turns off echo to the screen for the input
@@ -615,14 +619,14 @@ printElapsedTime()
 
   elapsedTimeOutput="$functionName completed in $elapsedTime seconds."
 
-#  case $printType in
-#    "info")
-#      printInfo "$elapsedTimeOutput"
-#      ;;
-#    "verbose")
-#      printVerbose "$elapsedTimeOutput"
-#      ;;
-#  esac
+  case $printType in
+    "info")
+      printInfo "$elapsedTimeOutput"
+      ;;
+    "verbose")
+      printVerbose "$elapsedTimeOutput"
+      ;;
+  esac
 }
 
 processConfig()
