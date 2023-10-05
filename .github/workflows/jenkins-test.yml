@@ -17,7 +17,6 @@ jobs:
       - uses: IgorTodorovskiIBM/meta/actions/build_and_test@main
         with:
           repo: 'https://github.com/ZOSOpenTools/metaport.git'
-        secrets:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JENKINS_USER: ${{ secrets.JENKINS_USER }}
           JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
