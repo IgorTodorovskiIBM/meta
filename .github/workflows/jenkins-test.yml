@@ -15,7 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: IgorTodorovskiIBM/meta/actions/build_and_test@main
-      - secrets: inherit
         with:
           repo: 'https://github.com/ZOSOpenTools/metaport.git'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
