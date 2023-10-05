@@ -1,13 +1,10 @@
 name: "BuildAndTest"
-description: "Build and Test on z/OS"
 on:
   workflow_call:
     inputs:
       repo:
-        description: "Github repository of the port"
         required: false
       branch:
-        description: "Github branch of the port"
         required: false
     secrets:
       JENKINS_USER:
