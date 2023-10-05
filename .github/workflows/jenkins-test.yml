@@ -13,8 +13,7 @@ jobs:
   trigger-jenkins-job:
     if: github.event.issue.pull_request || contains(github.event.comment.body, '/run tests') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    steps:
-      - uses: ./actions/build_and_test/action.yml
-        secrets: inherit
-        with:
-          repo: 'https://github.com/ZOSOpenTools/metaport.git'
+    uses: ./actions/build_and_test/action.yml
+    secrets: inherit
+    with:
+      repo: 'https://github.com/ZOSOpenTools/metaport.git'
