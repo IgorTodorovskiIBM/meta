@@ -12,6 +12,6 @@ on:
 jobs:
   trigger-jenkins-job:
     steps:
-        uses: IgorTodorovskiIBM/meta/build_and_test@main
+        uses: IgorTodorovskiIBM/meta/actions/build_and_test@main
         with:
           repo: 'https://github.com/ZOSOpenTools/metaport.git'
