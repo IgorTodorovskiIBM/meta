@@ -10,8 +10,6 @@ on:
         description: "Github branch of the port"
         required: false
     secrets:
-      GITHUB_TOKEN:
-        required: true
       JENKINS_USER:
         required: true
       JENKINS_API_TOKEN:
