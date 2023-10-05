@@ -5,11 +5,15 @@ on:
     types: [opened, synchronize]
     paths:
       - '**.sh'
+      - '**zopen-*'
+      - '**/zopen'
   push:
     branches:
       - main
     paths:
       - '**.sh'
+      - '**zopen-*'
+      - '**/zopen'
 
 jobs:
   shellcheck-check:
