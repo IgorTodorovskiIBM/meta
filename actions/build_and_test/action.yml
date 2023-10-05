@@ -20,6 +20,7 @@ branding:
   icon: "terminal"
   color: "gray-dark"
 runs:
+  using: composite
   steps:
     - name: Get PR details
       uses: xt0rted/pull-request-comment-branch@v1
