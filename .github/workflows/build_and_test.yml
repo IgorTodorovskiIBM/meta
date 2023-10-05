@@ -57,7 +57,7 @@ jobs:
             branch="${{ fromJson(steps.request.outputs.data).head.ref }}"
           fi
           BUILD_BRANCH_OPT=""
-          if ${{ use_branch_as_build_branch }}; then
+          if ${{ inputs.use_branch_as_build_branch }}; then
             BUILD_BRANCH_OPT="-F BUILD_BRANCH=${branch}"
             branch="main"
           fi
