@@ -14,4 +14,5 @@ jobs:
     uses: IgorTodorovskiIBM/meta/.github/workflows/build_and_test.yml@main
     with:
       repo: 'https://github.com/ZOSOpenTools/metaport.git'
+      use_branch_as_build_branch: true
     secrets: inherit
