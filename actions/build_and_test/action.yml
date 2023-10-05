@@ -7,12 +7,20 @@ inputs:
   branch:
     description: "Github branch of the port"
     required: false
+secrets:
+  GITHUB_TOKEN:
+    required: true
+  JENKINS_USER:
+    required: true
+  JENKINS_API_TOKEN:
+    required: true
+  JENKINS_SERVER_URL:
+    required: true
 branding:
   icon: "terminal"
   color: "gray-dark"
 runs:
   using: "composite"
-  if: github.event.issue.pull_request && contains(github.event.comment.body, '/run tests')
   steps:
     - name: Get PR details
       uses: xt0rted/pull-request-comment-branch@v1
