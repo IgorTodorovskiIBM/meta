@@ -1,5 +1,7 @@
 name: "BuildAndTest"
 description: "Build and Test on z/OS"
+on:
+  workflow_dispatch:
 inputs:
   repo:
     description: "Github repository of the port"
