@@ -2,6 +2,7 @@ name: "BuildAndTest"
 description: "Build and Test on z/OS"
 on:
   workflow_dispatch:
+  workflow_call:
 inputs:
   repo:
     description: "Github repository of the port"
@@ -21,7 +22,7 @@ secrets:
 branding:
   icon: "terminal"
   color: "gray-dark"
-runs:
+jobs:
   using: composite
   steps:
     - name: Get PR details
