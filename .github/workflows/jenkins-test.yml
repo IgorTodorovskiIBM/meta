@@ -10,11 +10,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  trigger-jenkins-job:
-    if: github.event.issue.pull_request || contains(github.event.comment.body, '/run tests') || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    launchit:
-      uses: IgorTodorovskiIBM/meta/.github/workflows/build_and_test.yml@main
-      secrets: inherit
-      with:
-        repo: 'https://github.com/ZOSOpenTools/metaport.git'
+  call-workflow-passing-data:
+    uses: IgorTodorovskiIBM/meta/.github/workflows/build_and_test.yml@main
+    with:
+      config-path: .github/labeler.yml
+    secrets: inherit

@@ -1,24 +1,23 @@
 name: "BuildAndTest"
 description: "Build and Test on z/OS"
 on:
-  workflow_dispatch:
   workflow_call:
-inputs:
-  repo:
-    description: "Github repository of the port"
-    required: false
-  branch:
-    description: "Github branch of the port"
-    required: false
-secrets:
-  GITHUB_TOKEN:
-    required: true
-  JENKINS_USER:
-    required: true
-  JENKINS_API_TOKEN:
-    required: true
-  JENKINS_SERVER_URL:
-    required: true
+    inputs:
+      repo:
+        description: "Github repository of the port"
+        required: false
+      branch:
+        description: "Github branch of the port"
+        required: false
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+      JENKINS_USER:
+        required: true
+      JENKINS_API_TOKEN:
+        required: true
+      JENKINS_SERVER_URL:
+        required: true
 branding:
   icon: "terminal"
   color: "gray-dark"
