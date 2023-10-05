@@ -21,3 +21,5 @@ jobs:
           JENKINS_USER: ${{ secrets.JENKINS_USER }}
           JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
           JENKINS_SERVER_URL: ${{ secrets.JENKINS_SERVER_URL }}
+        secrets: inherit
+
