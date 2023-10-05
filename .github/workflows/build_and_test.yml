@@ -5,8 +5,10 @@ on:
       repo:
         required: false
         type: string
+        default: ""
       branch:
         required: false
+        default: ""
         type: string
     secrets:
       JENKINS_USER:
@@ -39,15 +41,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trigger Jenkins Job
-        env:
-          repo: ${{ inputs.repo }}
-          branch: ${{ inputs.branch }}
         run: |
           JENKINS_JOB_URL="${{ secrets.JENKINS_SERVER_URL }}/job/Port-Build/buildWithParameters?token=jenkinstest"
 
+          repo="${{ inputs.repo }}"
           if [[ -z "${repo}" ]]; then
             repo = "${{ fromJson(steps.request.outputs.data).head.repo.ssh_clone }}"
           fi
+          branch="${{ inputs.branch }}"
           if [[ -z "${branch}" ]]; then
             branch = "${{ fromJson(steps.request.outputs.data).head.ref }}"
           fi
