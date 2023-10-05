@@ -4,8 +4,10 @@ on:
     inputs:
       repo:
         required: false
+        type: string
       branch:
         required: false
+        type: string
     secrets:
       JENKINS_USER:
         required: true
